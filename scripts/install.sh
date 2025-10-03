@@ -62,7 +62,35 @@ chmod 755 "$LOG_DIR"
 # アプリケーションファイルのコピー
 log_info "アプリケーションファイルをコピーします..."
 if [ -f "./package.json" ]; then
-    cp -r ./* "$INSTALL_DIR/"
+    # 現在のディレクトリがインストール先と同じかチェック
+    CURRENT_DIR=$(pwd)
+    if [ "$CURRENT_DIR" = "$INSTALL_DIR" ]; then
+        log_info "既にインストールディレクトリにいます。ファイルコピーをスキップします"
+    else
+        # 必要なファイルのみを選択的にコピー
+        log_info "必要なファイルをコピーします..."
+        
+        # アプリケーションディレクトリをクリア（既存ファイルがある場合）
+        if [ -d "$INSTALL_DIR" ] && [ "$(ls -A $INSTALL_DIR)" ]; then
+            log_info "既存のファイルをバックアップします..."
+            sudo mv "$INSTALL_DIR" "$INSTALL_DIR.backup.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || true
+            sudo mkdir -p "$INSTALL_DIR"
+        fi
+        
+        # 必要なファイルとディレクトリをコピー
+        sudo cp package.json "$INSTALL_DIR/"
+        sudo cp tsconfig.json "$INSTALL_DIR/"
+        sudo cp vitest.config.ts "$INSTALL_DIR/"
+        sudo cp yarn.lock "$INSTALL_DIR/" 2>/dev/null || true
+        sudo cp eslint.config.mjs "$INSTALL_DIR/"
+        sudo cp -r src "$INSTALL_DIR/"
+        
+        # 設定ファイルをコピー（存在する場合）
+        [ -f ".env.example" ] && sudo cp .env.example "$INSTALL_DIR/"
+        [ -f ".prettierrc.json" ] && sudo cp .prettierrc.json "$INSTALL_DIR/"
+        [ -f ".prettierignore" ] && sudo cp .prettierignore "$INSTALL_DIR/"
+        [ -f ".yarnrc.yml" ] && sudo cp .yarnrc.yml "$INSTALL_DIR/"
+    fi
     
     # 依存関係のインストール
     log_info "依存関係をインストールします..."
