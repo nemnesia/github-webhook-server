@@ -1,0 +1,25 @@
+# ビルド出力とキャッシュ
+dist/
+node_modules/
+.yarn/
+coverage/
+
+# Yarn設定ファイル
+.yarnrc.yml
+.yarnrc
+yarn.lock
+
+# パッケージマネージャー関連
+package-lock.json
+pnpm-lock.yaml
+
+# ログファイル
+*.log
+
+# 環境変数ファイル
+.env
+.env.*
+
+# その他の設定ファイル（手動フォーマットを維持）
+.vscode/
+.idea/

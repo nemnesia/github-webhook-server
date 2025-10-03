@@ -1,0 +1,82 @@
+# Yarn v4 (Berry) + Node.js + TypeScript プロジェクト用 .gitignore
+
+# === Yarn v4 関連 ===
+# Yarn v4 のキャッシュディレクトリ
+.yarn/cache/
+
+# Yarn v4 のビルド出力や一時ファイル
+.yarn/build-state.yml
+.yarn/install-state.gz
+.yarn/unplugged/
+
+# Yarn v4 パッチとプラグイン（プロジェクト固有の場合は除外）
+.yarn/patches/
+.yarn/plugins/
+.yarn/sdks/
+.yarn/versions/
+
+# Yarn v4 の PnP ファイル（nodeLinker: pnp の場合）
+.pnp.*
+
+# Node.js modules（nodeLinker: node-modules の場合）
+node_modules/
+
+# === 環境変数とシークレット ===
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# === ビルド出力 ===
+dist/
+build/
+out/
+
+# === TypeScript ===
+*.tsbuildinfo
+
+# === ログファイル ===
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === ランタイムデータ ===
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# === カバレッジディレクトリ ===
+coverage/
+.coverage/
+.nyc_output/
+
+# === テスト関連 ===
+test-results/
+playwright-report/
+
+# === IDE / エディタ ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS 固有 ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# === PM2 ===
+.pm2/
+
+# === その他 ===
+*.tgz
+*.tar.gz

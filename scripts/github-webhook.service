@@ -1,0 +1,40 @@
+[Unit]
+Description=GitHub Webhook Server
+Documentation=https://github.com/username/github-webhook-server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=webhook
+Group=webhook
+WorkingDirectory=/opt/github-webhook-server
+ExecStart=/usr/bin/node /opt/github-webhook-server/dist/index.js
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# 環境変数ファイルの読み込み
+EnvironmentFile=/opt/github-webhook-server/.env
+
+# セキュリティ設定
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/github-webhook-server/logs
+
+# ログ設定
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=github-webhook
+
+# リソース制限
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
