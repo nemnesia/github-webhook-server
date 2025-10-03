@@ -89,26 +89,24 @@ chmod -R 755 "$INSTALL_DIR"
 
 # 環境設定ファイルの作成
 if [ ! -f "$INSTALL_DIR/.env" ]; then
-    log_info "環境設定ファイルのサンプルを作成します..."
-    cat > "$INSTALL_DIR/.env" << EOF
-# GitHub Webhook 設定
-WEBHOOK_SECRET=your-secret-key-here
-PROJECT_PATH=/path/to/your/project
-DEPLOY_COMMAND=git pull && npm install && pm2 restart app
-ALLOWED_BRANCHES=main,master
-
-# サーバー設定
-PORT=3000
-NODE_ENV=production
-
-# ログ設定
-ENABLE_DETAILED_LOGS=false
-EOF
+    log_info "環境設定ファイルのテンプレートをコピーします..."
+    if [ -f ".env.example" ]; then
+        cp ".env.example" "$INSTALL_DIR/.env"
+        log_info ".env.example から .env を作成しました"
+    elif [ -f "./scripts/.env.example" ]; then
+        cp "./scripts/.env.example" "$INSTALL_DIR/.env"
+        log_info "scripts/.env.example から .env を作成しました"
+    else
+        log_warn ".env.example が見つかりません。手動で .env ファイルを作成してください"
+        touch "$INSTALL_DIR/.env"
+    fi
     
     chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/.env"
     chmod 600 "$INSTALL_DIR/.env"
     
     log_warn "環境設定ファイル $INSTALL_DIR/.env を編集してください"
+else
+    log_info "既存の .env ファイルが見つかりました。そのまま使用します"
 fi
 
 # systemd サービスファイルのコピー
