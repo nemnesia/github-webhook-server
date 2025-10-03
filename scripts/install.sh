@@ -42,6 +42,13 @@ fi
 
 log_info "Node.js バージョン: $(node --version)"
 
+# Yarn のセットアップ（corepack使用）
+if command -v corepack &> /dev/null && ! command -v yarn &> /dev/null; then
+    log_info "corepack を使用してYarnをセットアップします..."
+    corepack enable
+    corepack prepare yarn@stable --activate
+fi
+
 # ユーザーとグループの作成
 if ! id "$SERVICE_USER" &>/dev/null; then
     log_info "ユーザー '$SERVICE_USER' を作成します..."
@@ -96,14 +103,32 @@ if [ -f "./package.json" ]; then
     log_info "依存関係をインストールします..."
     cd "$INSTALL_DIR"
     
-    # yarn がある場合は yarn を使用、なければ npm を使用
+    # Yarn の確認・インストール
     if command -v yarn &> /dev/null; then
         log_info "yarn を使用して依存関係をインストールします..."
+        # Yarn v4 のセットアップ
+        if ! sudo -u "$SERVICE_USER" corepack enable 2>/dev/null; then
+            log_warn "corepack の有効化に失敗しました。Yarn v4 のセットアップをスキップします"
+        fi
+        sudo -u "$SERVICE_USER" yarn install --production
+        sudo -u "$SERVICE_USER" yarn build
+    elif command -v corepack &> /dev/null; then
+        log_info "corepack を使用してyarnを有効化します..."
+        sudo corepack enable
+        sudo -u "$SERVICE_USER" corepack prepare yarn@stable --activate
         sudo -u "$SERVICE_USER" yarn install --production
         sudo -u "$SERVICE_USER" yarn build
     else
         log_info "npm を使用して依存関係をインストールします..."
-        sudo -u "$SERVICE_USER" npm ci --only=production
+        
+        # package-lock.json が存在しない場合は npm install を使用
+        if [ ! -f "package-lock.json" ]; then
+            log_info "package-lock.json が見つかりません。npm install を使用します"
+            sudo -u "$SERVICE_USER" npm install --omit=dev
+        else
+            sudo -u "$SERVICE_USER" npm ci --omit=dev
+        fi
+        
         sudo -u "$SERVICE_USER" npm run build
     fi
 else
