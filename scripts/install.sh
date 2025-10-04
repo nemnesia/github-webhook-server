@@ -133,8 +133,8 @@ if [ -f "./package.json" ]; then
         export COREPACK_ENABLE_STRICT=0
         
         # 本番用インストール
-        sudo -u "$SERVICE_USER" env YARN_CACHE_FOLDER="$YARN_CACHE_DIR" COREPACK_ENABLE_AUTO_PIN=0 yarn install --production
-        sudo -u "$SERVICE_USER" env YARN_CACHE_FOLDER="$YARN_CACHE_DIR" COREPACK_ENABLE_AUTO_PIN=0 yarn build
+        sudo -u "$SERVICE_USER" yarn install --production
+        sudo -u "$SERVICE_USER" yarn build
         
     elif [ -f "package-lock.json" ]; then
         log_info "package-lock.json が検出されました。npmを使用します"
