@@ -55,9 +55,18 @@ fi
 # ユーザーとグループの作成
 if ! id "$SERVICE_USER" &>/dev/null; then
     log_info "ユーザー '$SERVICE_USER' を作成します..."
-    useradd --system --shell /bin/false --home-dir "$INSTALL_DIR" --create-home "$SERVICE_USER"
+    # Git SSH用にホームディレクトリを持つユーザーとして作成
+    useradd --system --shell /bin/bash --home-dir "/home/$SERVICE_USER" --create-home "$SERVICE_USER"
 else
     log_info "ユーザー '$SERVICE_USER' は既に存在します"
+    
+    # 既存ユーザーのホームディレクトリが存在しない場合は作成
+    if [ ! -d "/home/$SERVICE_USER" ]; then
+        log_info "ホームディレクトリを作成します: /home/$SERVICE_USER"
+        mkdir -p "/home/$SERVICE_USER"
+        chown "$SERVICE_USER:$SERVICE_GROUP" "/home/$SERVICE_USER"
+        chmod 700 "/home/$SERVICE_USER"
+    fi
 fi
 
 # インストールディレクトリの作成と権限設定
@@ -68,6 +77,44 @@ mkdir -p "$LOG_DIR"
 # ログディレクトリの権限設定
 chown "$SERVICE_USER:$SERVICE_GROUP" "$LOG_DIR"
 chmod 755 "$LOG_DIR"
+
+# SSH環境のセットアップ（Git用）
+setup_ssh_environment() {
+    local ssh_dir="/home/$SERVICE_USER/.ssh"
+    local ssh_key="$ssh_dir/id_ed25519"
+    
+    log_info "SSH環境をセットアップします..."
+    
+    # .sshディレクトリの作成
+    if [ ! -d "$ssh_dir" ]; then
+        sudo -u "$SERVICE_USER" mkdir -p "$ssh_dir"
+        chmod 700 "$ssh_dir"
+    fi
+    
+    # SSH鍵の生成（存在しない場合のみ）
+    if [ ! -f "$ssh_key" ]; then
+        log_info "GitHub用のSSH鍵を生成します..."
+        sudo -u "$SERVICE_USER" ssh-keygen -t ed25519 -C "webhook@$(hostname)" -f "$ssh_key" -N ""
+        
+        # SSH設定ファイルの作成
+        sudo -u "$SERVICE_USER" cat > "$ssh_dir/config" << 'EOF'
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+    StrictHostKeyChecking no
+EOF
+        chmod 600 "$ssh_dir/config"
+        
+        log_info "SSH公開鍵が生成されました。GitHubのDeploy Keysに追加してください:"
+        log_info "$(cat "$ssh_key.pub")"
+        log_info ""
+    else
+        log_info "SSH鍵は既に存在します"
+    fi
+}
+
+setup_ssh_environment
 
 # アプリケーションファイルのコピー
 log_info "アプリケーションファイルをコピーします..."
@@ -154,7 +201,11 @@ fi
 
 # 権限の設定
 chown -R "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR"
-chmod -R 755 "$INSTALL_DIR"
+# ディレクトリには755、ファイルには644を設定
+find "$INSTALL_DIR" -type d -exec chmod 755 {} \;
+find "$INSTALL_DIR" -type f -exec chmod 644 {} \;
+# 実行が必要なファイルのみ実行権限を付与
+[ -f "$INSTALL_DIR/dist/index.js" ] && chmod 755 "$INSTALL_DIR/dist/index.js"
 
 # 環境設定ファイルの作成
 if [ ! -f "$INSTALL_DIR/.env" ]; then
