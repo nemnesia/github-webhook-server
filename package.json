@@ -1,5 +1,6 @@
 {
   "name": "github-webhook-server",
+  "version": "1.0.0",
   "type": "module",
   "packageManager": "yarn@4.9.4",
   "scripts": {

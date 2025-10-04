@@ -1,6 +1,6 @@
-# GitHub Webhook サーバー
+# GitHub Webhook サーバー v1.0.0
 
-🚀 TypeScript で構築されたセキュアで堅牢な GitHub webhook サーバーです。自動デプロイメントに対応しています。
+🚀 TypeScript で構築されたセキュアで堅牢な GitHub webhook サーバーです。自動デプロイメント・systemdサービス運用・SSHデプロイに対応。
 
 ## 機能
 
@@ -42,9 +42,9 @@ WEBHOOK_SECRET=your_github_webhook_secret_here
 PORT=3000
 NODE_ENV=production
 
-# デプロイ設定
-PROJECT_PATH=/path/to/your/project
-DEPLOY_COMMAND=git pull && yarn install && yarn build
+# デプロイ設定例（systemd/PID管理 & SSH）
+PROJECT_PATH=/opt/github-webhook-server
+DEPLOY_COMMAND=git pull origin main && yarn install --production && yarn build && systemctl restart github-webhook
 
 # セキュリティ: 許可されたブランチ（カンマ区切り）
 ALLOWED_BRANCHES=main,master
@@ -240,22 +240,6 @@ GitHub イベント用のメイン webhook エンドポイント。
 
 ## デプロイメント
 
-### PM2 を使用
-
-```bash
-# PM2 をグローバルにインストール
-yarn global add pm2
-
-# アプリケーションの起動
-pm2 start dist/index.js --name "webhook-server"
-
-# PM2 設定の保存
-pm2 save
-
-# PM2 スタートアップスクリプトの設定
-pm2 startup
-```
-
 ### Docker を使用
 
 ```dockerfile
@@ -311,19 +295,14 @@ ENABLE_DETAILED_LOGS=true
 
 このプロジェクトは Yarn v4 を使用しており、以下の利点があります：
 
-- 🚀 **高速インストール**: PnP（Plug'n'Play）による高速な依存関係解決
-- 💾 **ディスク効率**: `.yarn/cache` による効率的なキャッシュ
-- 🔒 **ゼロインストール**: Git にキャッシュを含めることで、`yarn install` 不要の環境構築
+- 🚀 **高速インストール**: PnP（Plug'n'Play）やグローバルキャッシュによる高速な依存関係解決
+- 💾 **ディスク効率**: `/var/cache/yarn-webhook` への効率的なキャッシュ
+- 🔒 **ゼロインストール**: Git にキャッシュを含めることで、`yarn install` 不要の環境構築も可能
 - 📦 **モジュール解決**: より効率的なモジュール解決システム
 
-## 貢献
+## バージョン
 
-1. リポジトリをフォーク
-2. フィーチャーブランチを作成
-3. 変更を実装
-4. 該当する場合はテストを追加
-5. リンティングとフォーマットを実行
-6. プルリクエストを提出
+本サーバーのバージョン: 1.0.0
 
 ## ライセンス
 
