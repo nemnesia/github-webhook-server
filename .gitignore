@@ -21,6 +21,11 @@
 # Node.js modules（nodeLinker: node-modules の場合）
 node_modules/
 
+# === npm 関連（Yarnプロジェクトなので除外） ===
+package-lock.json
+npm-debug.log*
+.npm/
+
 # === 環境変数とシークレット ===
 .env
 .env.local

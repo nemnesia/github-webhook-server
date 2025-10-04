@@ -103,32 +103,39 @@ if [ -f "./package.json" ]; then
     log_info "依存関係をインストールします..."
     cd "$INSTALL_DIR"
     
-    # Yarn の確認・インストール
-    if command -v yarn &> /dev/null; then
-        log_info "yarn を使用して依存関係をインストールします..."
-        # Yarn v4 のセットアップ
-        if ! sudo -u "$SERVICE_USER" corepack enable 2>/dev/null; then
-            log_warn "corepack の有効化に失敗しました。Yarn v4 のセットアップをスキップします"
+    # このプロジェクトはYarnプロジェクトなので、Yarnの使用を強制
+    if [ -f "yarn.lock" ]; then
+        log_info "yarn.lock が検出されました。Yarnを使用します"
+        
+        # Yarn の確認・セットアップ
+        if ! command -v yarn &> /dev/null; then
+            if command -v corepack &> /dev/null; then
+                log_info "corepack を使用してYarnをセットアップします..."
+                sudo corepack enable
+                sudo -u "$SERVICE_USER" corepack prepare yarn@stable --activate
+            else
+                log_error "Yarn が見つかりません。corepack も利用できません"
+                log_error "Node.js 16.10+ が必要です（corepack内蔵）"
+                exit 1
+            fi
         fi
+        
+        # Yarn v4 のセットアップ確認
+        sudo -u "$SERVICE_USER" corepack enable 2>/dev/null || true
+        
+        # 本番用インストール
         sudo -u "$SERVICE_USER" yarn install --production
         sudo -u "$SERVICE_USER" yarn build
-    elif command -v corepack &> /dev/null; then
-        log_info "corepack を使用してyarnを有効化します..."
-        sudo corepack enable
-        sudo -u "$SERVICE_USER" corepack prepare yarn@stable --activate
-        sudo -u "$SERVICE_USER" yarn install --production
-        sudo -u "$SERVICE_USER" yarn build
+        
+    elif [ -f "package-lock.json" ]; then
+        log_info "package-lock.json が検出されました。npmを使用します"
+        sudo -u "$SERVICE_USER" npm ci --omit=dev
+        sudo -u "$SERVICE_USER" npm run build
+        
     else
-        log_info "npm を使用して依存関係をインストールします..."
-        
-        # package-lock.json が存在しない場合は npm install を使用
-        if [ ! -f "package-lock.json" ]; then
-            log_info "package-lock.json が見つかりません。npm install を使用します"
-            sudo -u "$SERVICE_USER" npm install --omit=dev
-        else
-            sudo -u "$SERVICE_USER" npm ci --omit=dev
-        fi
-        
+        log_warn "yarn.lock も package-lock.json も見つかりません"
+        log_info "npmを使用してインストールします"
+        sudo -u "$SERVICE_USER" npm install --omit=dev
         sudo -u "$SERVICE_USER" npm run build
     fi
 else
