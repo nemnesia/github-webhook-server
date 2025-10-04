@@ -133,7 +133,7 @@ if [ -f "./package.json" ]; then
         export COREPACK_ENABLE_STRICT=0
         
         # 本番用インストール
-        sudo -u "$SERVICE_USER" yarn install --production
+        sudo -u "$SERVICE_USER" yarn install --immutable
         sudo -u "$SERVICE_USER" yarn build
         
     elif [ -f "package-lock.json" ]; then
