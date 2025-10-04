@@ -45,8 +45,11 @@ log_info "Node.js バージョン: $(node --version)"
 # Yarn のセットアップ（corepack使用）
 if command -v corepack &> /dev/null && ! command -v yarn &> /dev/null; then
     log_info "corepack を使用してYarnをセットアップします..."
+    # corepackの確認を自動承認
+    export COREPACK_ENABLE_AUTO_PIN=0
+    export COREPACK_ENABLE_STRICT=0
     corepack enable
-    corepack prepare yarn@stable --activate
+    echo "Y" | corepack prepare yarn@stable --activate 2>/dev/null || corepack prepare yarn@stable --activate
 fi
 
 # ユーザーとグループの作成
@@ -125,9 +128,13 @@ if [ -f "./package.json" ]; then
         mkdir -p "$YARN_CACHE_DIR"
         chown "$SERVICE_USER:$SERVICE_GROUP" "$YARN_CACHE_DIR"
         
+        # Corepackの自動確認設定
+        export COREPACK_ENABLE_AUTO_PIN=0
+        export COREPACK_ENABLE_STRICT=0
+        
         # 本番用インストール
-        sudo -u "$SERVICE_USER" YARN_CACHE_FOLDER="$YARN_CACHE_DIR" yarn install --production
-        sudo -u "$SERVICE_USER" YARN_CACHE_FOLDER="$YARN_CACHE_DIR" yarn build
+        sudo -u "$SERVICE_USER" env YARN_CACHE_FOLDER="$YARN_CACHE_DIR" COREPACK_ENABLE_AUTO_PIN=0 yarn install --production
+        sudo -u "$SERVICE_USER" env YARN_CACHE_FOLDER="$YARN_CACHE_DIR" COREPACK_ENABLE_AUTO_PIN=0 yarn build
         
     elif [ -f "package-lock.json" ]; then
         log_info "package-lock.json が検出されました。npmを使用します"
