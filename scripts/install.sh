@@ -120,13 +120,18 @@ if [ -f "./package.json" ]; then
             elif command -v corepack &> /dev/null; then
                 log_info "corepackを使用してYarnをセットアップします..."
                 
-                # corepackのキャッシュディレクトリを事前に作成
-                mkdir -p "$INSTALL_DIR/.cache/node/corepack"
-                chown -R "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/.cache"
+                # corepackのキャッシュディレクトリを webhookユーザーのホームディレクトリに設定
+                WEBHOOK_HOME="/home/$SERVICE_USER"
+                COREPACK_CACHE="$WEBHOOK_HOME/.cache/node/corepack"
+                
+                # webhookユーザーのホームディレクトリとキャッシュディレクトリを作成
+                mkdir -p "$WEBHOOK_HOME"
+                mkdir -p "$COREPACK_CACHE"
+                chown -R "$SERVICE_USER:$SERVICE_GROUP" "$WEBHOOK_HOME"
                 
                 # 環境変数を設定してcorepackを実行
-                env COREPACK_HOME="$INSTALL_DIR/.cache/node/corepack" corepack enable
-                env COREPACK_HOME="$INSTALL_DIR/.cache/node/corepack" corepack prepare yarn@stable --activate
+                sudo -u "$SERVICE_USER" env COREPACK_HOME="$COREPACK_CACHE" corepack enable
+                sudo -u "$SERVICE_USER" env COREPACK_HOME="$COREPACK_CACHE" corepack prepare yarn@stable --activate
                 
             else
                 log_error "YarnもcorepackもnpmもInstall方法が見つかりません"
@@ -137,8 +142,8 @@ if [ -f "./package.json" ]; then
         fi
         
         # 本番用インストール
-        sudo -u "$SERVICE_USER" yarn install --production
-        sudo -u "$SERVICE_USER" yarn build
+        sudo -u "$SERVICE_USER" env COREPACK_HOME="/home/$SERVICE_USER/.cache/node/corepack" yarn install --production
+        sudo -u "$SERVICE_USER" env COREPACK_HOME="/home/$SERVICE_USER/.cache/node/corepack" yarn build
         
     elif [ -f "package-lock.json" ]; then
         log_info "package-lock.json が検出されました。npmを使用します"
