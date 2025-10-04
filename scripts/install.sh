@@ -109,19 +109,32 @@ if [ -f "./package.json" ]; then
         
         # Yarn の確認・セットアップ
         if ! command -v yarn &> /dev/null; then
-            if command -v corepack &> /dev/null; then
-                log_info "corepack を使用してYarnをセットアップします..."
-                sudo corepack enable
-                sudo -u "$SERVICE_USER" corepack prepare yarn@stable --activate
+            log_info "Yarnが見つかりません。インストールします..."
+            
+            # 方法1: npmを使用してYarnをインストール（最も確実）
+            if command -v npm &> /dev/null; then
+                log_info "npmを使用してYarnをインストールします..."
+                npm install -g yarn
+                
+            # 方法2: corepackを使用
+            elif command -v corepack &> /dev/null; then
+                log_info "corepackを使用してYarnをセットアップします..."
+                
+                # corepackのキャッシュディレクトリを事前に作成
+                mkdir -p "$INSTALL_DIR/.cache/node/corepack"
+                chown -R "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/.cache"
+                
+                # 環境変数を設定してcorepackを実行
+                env COREPACK_HOME="$INSTALL_DIR/.cache/node/corepack" corepack enable
+                env COREPACK_HOME="$INSTALL_DIR/.cache/node/corepack" corepack prepare yarn@stable --activate
+                
             else
-                log_error "Yarn が見つかりません。corepack も利用できません"
-                log_error "Node.js 16.10+ が必要です（corepack内蔵）"
+                log_error "YarnもcorepackもnpmもInstall方法が見つかりません"
+                log_error "手動でYarnをインストールしてください："
+                log_error "  curl -o- -L https://yarnpkg.com/install.sh | bash"
                 exit 1
             fi
         fi
-        
-        # Yarn v4 のセットアップ確認
-        sudo -u "$SERVICE_USER" corepack enable 2>/dev/null || true
         
         # 本番用インストール
         sudo -u "$SERVICE_USER" yarn install --production
