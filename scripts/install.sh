@@ -109,32 +109,25 @@ if [ -f "./package.json" ]; then
         
         # Yarn の確認・セットアップ
         if ! command -v yarn &> /dev/null; then
-            log_info "Yarnが見つかりません。インストールします..."
-            
-            # 方法1: npmを使用してYarnをインストール（最も確実）
-            if command -v npm &> /dev/null; then
-                log_info "npmを使用してYarnをインストールします..."
-                npm install -g yarn
-                
-            # 方法2: corepackを使用
-            elif command -v corepack &> /dev/null; then
-                log_info "corepackを使用してYarnをセットアップします..."
-                
-                # webhookユーザーとして実行することで権限問題を回避
-                sudo -u "$SERVICE_USER" corepack enable
-                sudo -u "$SERVICE_USER" corepack prepare yarn@stable --activate
-                
-            else
-                log_error "YarnもcorepackもnpmもInstall方法が見つかりません"
-                log_error "手動でYarnをインストールしてください："
-                log_error "  curl -o- -L https://yarnpkg.com/install.sh | bash"
-                exit 1
-            fi
+            log_error "Yarnが見つかりません"
+            log_info "手動でYarnをインストールしてください："
+            log_info "  方法1 (npm): npm install -g yarn"
+            log_info "  方法2 (corepack): corepack enable && corepack prepare yarn@stable --activate"
+            log_info "  方法3 (スクリプト): curl -o- -L https://yarnpkg.com/install.sh | bash"
+            log_info ""
+            log_info "Yarnインストール後、再度このスクリプトを実行してください"
+            exit 1
         fi
         
+        # Yarnキャッシュディレクトリをプロジェクト外に設定（ESM問題回避）
+        YARN_CACHE_DIR="/var/cache/yarn-$SERVICE_USER"
+        log_info "Yarnキャッシュディレクトリを設定: $YARN_CACHE_DIR"
+        mkdir -p "$YARN_CACHE_DIR"
+        chown "$SERVICE_USER:$SERVICE_GROUP" "$YARN_CACHE_DIR"
+        
         # 本番用インストール
-        sudo -u "$SERVICE_USER" yarn install --production
-        sudo -u "$SERVICE_USER" yarn build
+        sudo -u "$SERVICE_USER" YARN_CACHE_FOLDER="$YARN_CACHE_DIR" yarn install --production
+        sudo -u "$SERVICE_USER" YARN_CACHE_FOLDER="$YARN_CACHE_DIR" yarn build
         
     elif [ -f "package-lock.json" ]; then
         log_info "package-lock.json が検出されました。npmを使用します"
