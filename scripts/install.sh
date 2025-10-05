@@ -232,7 +232,22 @@ fi
 # systemd サービスファイルのコピー
 log_info "systemd サービスを設定します..."
 if [ -f "./scripts/github-webhook.service" ]; then
-    cp "./scripts/github-webhook.service" "/etc/systemd/system/"
+    # .envファイルからPROJECT_PATHを読み取り
+    PROJECT_PATH_FROM_ENV=""
+    if [ -f "$INSTALL_DIR/.env" ]; then
+        PROJECT_PATH_FROM_ENV=$(grep "^PROJECT_PATH=" "$INSTALL_DIR/.env" | cut -d'=' -f2 | tr -d '"' | tr -d "'")
+    fi
+    
+    # ReadWritePathsを動的に設定
+    if [ -n "$PROJECT_PATH_FROM_ENV" ] && [ "$PROJECT_PATH_FROM_ENV" != "/opt/github-webhook-server" ]; then
+        log_info "PROJECT_PATH ($PROJECT_PATH_FROM_ENV) をReadWritePathsに追加します"
+        # サービスファイルをコピーしてPROJECT_PATHを追加
+        sed "s|ReadWritePaths=/opt/github-webhook-server /var/www|ReadWritePaths=/opt/github-webhook-server $PROJECT_PATH_FROM_ENV|g" \
+            "./scripts/github-webhook.service" > "/etc/systemd/system/github-webhook.service"
+    else
+        cp "./scripts/github-webhook.service" "/etc/systemd/system/"
+    fi
+    
     systemctl daemon-reload
     log_info "サービスファイルをインストールしました"
 else
