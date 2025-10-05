@@ -24,8 +24,8 @@ EnvironmentFile=/opt/github-webhook-server/.env
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/opt/github-webhook-server/logs
+ProtectHome=false
+ReadWritePaths=/opt/github-webhook-server /var/www /home/webhook
 
 # ログ設定
 StandardOutput=journal
